@@ -1,0 +1,133 @@
+[project]
+name = "nopf"
+version = "0.1.0"
+description = "Framework to build automation using Netbox webhooks"
+
+readme = "README.md"
+authors = [
+    {name = "Link Society", email = "contact@link-society.com"},
+]
+
+license = {text = "MIT"}
+
+requires-python = ">=3.13"
+dependencies = [
+    "python-decouple>=3.8",
+    "logbook>=1.8.0",
+    "logfmt>=0.4",
+    "anyio>=4.8.0",
+    "fastapi>=0.115.8",
+    "anycorn>=0.18.0",
+    "httpx>=0.28.1",
+    "openapi-spec-validator>=0.7.1",
+    "openapi-schema-validator>=0.6.3",
+    "pyyaml>=6.0.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.5",
+]
+
+doc = [
+    "sphinx>=8.2.3",
+    "sphinx-pyproject>=0.3.0",
+    "sphinx-rtd-theme>=3.0.2",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxemoji>=0.3.1",
+    "autodoc-pydantic>=2.2.0",
+]
+
+tests = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-netbox-docker @ git+https://github.com/link-society/pytest-netbox-docker.git",
+]
+
+types = [
+    "mypy>=1.15.0",
+    "types-jsonschema>=4.23.0.20241208",
+    "types-pyyaml>=6.0.12.20241230",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.scripts]
+"doc:html".cmd = "make -C docs clean html"
+
+"test:run:common".cmd = "pytest -c tests/common/pytest.ini tests/common/specs/"
+"test:run:common".env.COVERAGE_FILE = "tests/common/.coverage"
+
+"test:run:netbox-v3.6.x".cmd = "pytest -c tests/netbox-v3.6.x/pytest.ini tests/netbox-v3.6.x/specs/"
+"test:run:netbox-v3.6.x".env.COVERAGE_FILE = "tests/netbox-v3.6.x/.coverage"
+"test:run:netbox-v3.6.x".env.PYTEST_NETBOX_PLUGIN_NETBOX_IMAGE = "docker.io/netboxcommunity/netbox:v3.6.9"
+"test:run:netbox-v3.6.x".env.PYTEST_NETBOX_PLUGIN_NETBOX_START_PERIOD = "300"
+
+"test:run:netbox-v4.x".cmd = "pytest -c tests/netbox-v4.x/pytest.ini tests/netbox-v4.x/specs/"
+"test:run:netbox-v4.x".env.COVERAGE_FILE = "tests/netbox-v4.x/.coverage"
+"test:run:netbox-v4.x".env.PYTEST_NETBOX_PLUGIN_NETBOX_IMAGE = "docker.io/netboxcommunity/netbox:v4.2.6"
+"test:run:netbox-v4.x".env.PYTEST_NETBOX_PLUGIN_NETBOX_START_PERIOD = "300"
+
+"test:report:combine".cmd = [
+    "coverage", "combine",
+    "tests/common/.coverage",
+    "tests/netbox-v3.6.x/.coverage",
+    "tests/netbox-v4.x/.coverage",
+]
+"test:report:combine".env = {COVERAGE_FILE = ".coverage"}
+"test:report:finalize".composite = [
+    "coverage html",
+    "coverage report --fail-under=100",
+]
+
+test.composite = [
+    "test:run:common",
+    "test:run:netbox-v3.6.x",
+    "test:run:netbox-v4.x",
+    "test:report:combine",
+    "test:report:finalize",
+]
+
+[tool.sphinx-pyproject]
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+project = 'Netbox Operator Framework'
+copyright = '2025, Link Society'
+author = 'Link Society'
+
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+extensions = [
+    "sphinx_rtd_theme",
+    "sphinx.ext.githubpages",
+    "sphinxcontrib.mermaid",
+    "sphinxemoji.sphinxemoji",
+    "sphinx.ext.autodoc",
+    "sphinxcontrib.autodoc_pydantic",
+]
+
+templates_path = ["_templates"]
+exclude_patterns = []
+
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+
+# -- Options for API documentation -------------------------------------------
+# https://autodoc-pydantic.readthedocs.io/en/stable/users/configuration.html
+
+autodoc_pydantic_model_show_json = true
+autodoc_pydantic_model_summary_list_order = "bysource"
+autodoc_pydantic_model_member_order = "bysource"
